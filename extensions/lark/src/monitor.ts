@@ -169,7 +169,11 @@ export async function monitorLarkProvider(opts: MonitorLarkOpts): Promise<Monito
             return;
           }
 
+          log(`Lark: about to get runtime...`);
           const core = getLarkRuntime();
+          log(`Lark: runtime obtained`);
+
+          log(`Lark: about to resolve agent route...`);
           const route = core.channel.routing.resolveAgentRoute({
             cfg,
             channel: "lark",
@@ -178,7 +182,9 @@ export async function monitorLarkProvider(opts: MonitorLarkOpts): Promise<Monito
               id: channelId,
             },
           });
+          log(`Lark: route resolved, sessionKey=${route.sessionKey}`);
 
+          log(`Lark: about to finalize inbound context...`);
           const ctxPayload = core.channel.reply.finalizeInboundContext({
             Body: text,
             RawBody: text,
@@ -196,21 +202,54 @@ export async function monitorLarkProvider(opts: MonitorLarkOpts): Promise<Monito
             OriginatingChannel: "lark",
             OriginatingTo: `lark:${creds.appId}`,
           });
+          log(`Lark: context finalized`);
 
-          const dispatcher = createLarkReplyDispatcher({ cfg, channelId });
+          log(`Lark: about to create reply dispatcher...`);
+          const { dispatcher, replyOptions, markDispatchIdle } = createLarkReplyDispatcher({ cfg, channelId });
+          log(`Lark: dispatcher created`);
 
-          await core.channel.reply.dispatchReplyFromConfig({
+          log(`Lark: about to call dispatchReplyFromConfig...`);
+          const dispatchPromise = core.channel.reply.dispatchReplyFromConfig({
             ctx: ctxPayload,
             cfg,
             dispatcher,
-            replyOptions: {},
+            replyOptions,
           });
+
+          dispatchPromise.then((result) => {
+            log(`Lark dispatchReplyFromConfig completed successfully:`, result);
+            markDispatchIdle();
+          }).catch((err) => {
+            errorLog(`Lark dispatchReplyFromConfig failed:`, err);
+            errorLog(`Error type: ${typeof err}, String: "${String(err)}"`);
+            if (err instanceof Error) {
+              errorLog(`Error name: ${err.name}, message: ${err.message}`);
+            }
+            throw err;
+          });
+
+          await dispatchPromise;
+          log(`Lark dispatchReplyFromConfig await completed`);
         }
       }
 
       res.status(200).send("OK");
     } catch (err) {
       errorLog("Lark webhook error:", err);
+      errorLog("Error type:", typeof err);
+      errorLog("Error name:", err instanceof Error ? err.name : String(err));
+      errorLog("Error message:", err instanceof Error ? err.message : String(err));
+      if (err instanceof Error) {
+        errorLog("Error stack:", err.stack);
+      } else {
+        // Try to stringify the error for better visibility
+        try {
+          errorLog("Error details:", JSON.stringify(err, null, 2));
+        } catch {
+          errorLog("Could not stringify error");
+          errorLog("Raw error:", String(err));
+        }
+      }
       res.status(500).send("Internal Error");
     }
   });

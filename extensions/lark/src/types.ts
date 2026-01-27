@@ -1,4 +1,4 @@
-import { z } from "clawdbot/plugin-sdk";
+import { z } from "zod";
 
 /**
  * DM policy for Lark channel

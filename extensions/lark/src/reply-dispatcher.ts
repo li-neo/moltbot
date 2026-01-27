@@ -1,35 +1,52 @@
-import type { ReplyDispatcher, ClawdbotConfig } from "clawdbot/plugin-sdk";
+import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
 import { larkOutbound } from "./send.js";
-
-type PayloadBody = string | { text?: string } | null | undefined;
-
-function extractText(body: PayloadBody): string {
-  if (typeof body === "string") return body;
-  if (body && typeof body === "object" && "text" in body) {
-    return body.text ?? "";
-  }
-  return "";
-}
+import { getLarkRuntime } from "./runtime.js";
+import type { ReplyPayload } from "clawdbot/auto-reply/types.js";
 
 export function createLarkReplyDispatcher(opts: {
   cfg: ClawdbotConfig;
   channelId: string;
-}): ReplyDispatcher {
-  return {
-    dispatch: async (payload) => {
-      const text = extractText(payload.body as PayloadBody);
+}) {
+  const core = getLarkRuntime();
+  const { dispatcher, replyOptions, markDispatchIdle } = core.channel.reply.createReplyDispatcherWithTyping({
+    deliver: async (payload: ReplyPayload) => {
+      const text = payload.text;
 
       if (!text) {
-        return { id: "skipped", ts: Date.now() };
+        console.log(`[Lark Reply] Skipping empty message to channel ${opts.channelId}`);
+        return;
       }
 
-      const result = await larkOutbound.sendText({
-        cfg: opts.cfg,
-        to: opts.channelId,
-        text,
-      });
+      console.log(`[Lark Reply] Sending message to channel ${opts.channelId}, text length: ${text.length}`);
 
-      return { id: result.id ?? "", ts: result.ts ?? Date.now() };
+      try {
+        console.log(`[Lark Reply] Calling larkOutbound.sendText...`);
+        const result = await larkOutbound.sendText({
+          cfg: opts.cfg,
+          to: opts.channelId,
+          text,
+        });
+        console.log(`[Lark Reply] sendText completed, result:`, result);
+
+        console.log(`[Lark Reply] Success: message_id=${result.id}`);
+      } catch (err) {
+        console.error(`[Lark Reply] Failed to send message:`, err);
+        console.error(`[Lark Reply] Error details - type: ${typeof err}, String: "${String(err)}"`);
+        // 确保始终抛出标准 Error 对象
+        if (err instanceof Error) {
+          console.error(`[Lark Reply] Standard Error - name: ${err.name}, message: ${err.message}`);
+        }
+        throw err;
+      }
     },
+    onError: (err, info) => {
+      console.error(`[Lark Reply] Dispatch error for ${info.kind}:`, err);
+    },
+  });
+
+  return {
+    dispatcher,
+    replyOptions,
+    markDispatchIdle,
   };
 }
