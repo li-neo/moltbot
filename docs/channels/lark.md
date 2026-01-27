@@ -33,14 +33,29 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/clawdbot/clawdbot.git
+git clone -b feishu https://github.com/BLUE-coconut/clawdbot.git
 cd clawdbot
-
-# 安装依赖
-pnpm install
 ```
 
-### 1.2 配置 AI 模型
+### 1.2 安装依赖&初步编译
+前置条件 —— 安装好pnpm包管理工具
+```
+# npm 全局安装
+npm install -g pnpm@10.23.0
+
+# 或者 mac 用户可以用homebrew来安装
+brew install pnpm
+```
+
+安装项目中的依赖，并初步编译本项目
+```
+pnpm install
+pnpm ui:build
+pnpm build
+```
+
+
+### 1.3 配置 AI 模型
 
 在启动飞书集成之前，需要先配置好 AI 模型，以国内平台的 MiniMax-M2.1 模型为例。
 可以直接打开 `~/.clawdbot/clawdbot.json` 文件进行如下配置，关键是需要对"models"和"agents"配置项中的内容进行修改：
@@ -127,7 +142,7 @@ pnpm clawdbot gateway run --bind 127.0.0.1 --port 18789
 
 ### 2.3 获取应用凭证
 
-创建应用后，在应用概览页面获取以下凭证：
+创建应用后，在应用概览页面获取以下凭证（在后面步骤三中配置到clawdbot中）：
 
 ```
 应用 ID (App ID)：cli_xxxxxxxxxxxxx
@@ -198,7 +213,8 @@ Forwarding   https://your-app.ngrok-free.app -> http://localhost:3000
 
 记下这个 HTTPS 地址（格式如：`https://xxxx.ngrok-free.app`），这是你的公网 Webhook 地址。
 
-> ⚠️ **重要提示**：ngrok 免费版每次重启会更换地址，每次重启 ngrok 后需要更新飞书中的回调地址。
+> ⚠️ **安全提示**： ngrok 仅用于个人开发和调试，生产环境建议部署到正规云服务器。不要在公开渠道泄漏公网地址，且开发调试完成后记得及时关闭，避免长期暴露本地服务带来的安全风险。
+
 
 ### 4.3 启动 Clawdbot 网关
 
@@ -315,15 +331,6 @@ pnpm clawdbot gateway run --bind 0.0.0.0 --port 18789
 机器人：机器学习是人工智能的一个分支...
 ```
 
-
-## 日志文件位置
-
-Clawdbot 日志文件位于：`/tmp/clawdbot/clawdbot-YYYY-MM-DD.log`
-
-查看今天的日志：
-```bash
-tail -f /tmp/clawdbot/clawdbot-$(date +%Y-%m-%d).log
-```
 
 ## 相关文档
 
