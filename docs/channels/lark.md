@@ -60,46 +60,32 @@ pnpm build
 在启动飞书集成之前，需要先配置好 AI 模型，以国内平台的 MiniMax-M2.1 模型为例。
 可以直接打开 `~/.clawdbot/clawdbot.json` 文件进行如下配置，关键是需要对"models"和"agents"配置项中的内容进行修改：
 ```
-{
-  "models": {
-    "mode": "merge",
+"models": {
     "providers": {
-      "minimax": {
-        "baseUrl": "https://api.minimaxi.com/anthropic", // Minimax国内平台，模型访问地址
-        "apiKey": "sk-cp-xxx", // 你的 Minimax key
-        "auth": "api-key",
-        "api": "anthropic-messages",
-        "models": [
+      "volcengine": {
+        "baseUrl": "https://ark.cn-beijing.volces.com/api/coding/v3", // Coding Plan 的 Base URL
+        "apiKey": "dad699db-1463-4d18-9302-a9ccc1ee2665", // 替换为实际的 API KEY
+        "api": "openai-completions",
+        "models": [ // Coding Plan 支持的模型信息
           {
-            "id": "MiniMax-M2.1",
-            "name": "MiniMax M2.1",
-            "reasoning": false,
-            "input": [
-              "text"
-            ],
-            "cost": {
-              "input": 15,
-              "output": 60,
-              "cacheRead": 2,
-              "cacheWrite": 10
-            },
-            "contextWindow": 200000,
-            "maxTokens": 8192
+            "id": "ark-code-latest",
+            "name": "ark-code-latest"
           }
         ]
       }
     }
   },
   "agents": {
-    "defaults": {
+    "defaults": { // 模型信息
       "model": {
-        "primary": "minimax/MiniMax-M2.1" // 设置主模型
+        "primary": "volcengine/ark-code-latest"
       },
-      "models": { // 模型列表中如下添加
-        "minimax/MiniMax-M2.1": {
-          "alias": "Minimax"
+      "models": {
+        "volcengine/ark-code-latest": {
+          "alias": "volcengine"
         }
       },
+      "workspace": "/root/clawd", // MacOS、Windows 需要注意路径权限
       "compaction": {
         "mode": "safeguard"
       },
@@ -108,8 +94,7 @@ pnpm build
         "maxConcurrent": 8
       }
     }
-  },
-}
+  }
 ```
 
 ### 1.3 测试基本功能
@@ -159,10 +144,10 @@ pnpm clawdbot gateway run --bind 127.0.0.1 --port 18789
 
 ```bash
 # 设置飞书应用 ID
-pnpm clawdbot config set channels.lark.appId "cli_xxxxxxxxxxxxx"
+pnpm clawdbot config set channels.lark.appId "cli_****"
 
 # 设置飞书应用密钥
-pnpm clawdbot config set channels.lark.appSecret "your_app_secret_here"
+pnpm clawdbot config set channels.lark.appSecret "AZZtLRN****"
 
 # 启用飞书插件
 pnpm clawdbot config set channels.lark.enabled true
@@ -180,7 +165,7 @@ pnpm clawdbot config get channels.lark
 
 ```json
 {
-  "appId": "cli_a9fd17f5ea78dcbb",
+  "appId": "cli_a9fd17f****",
   "appSecret": "****************",
   "enabled": true
 }
@@ -204,6 +189,8 @@ brew install ngrok
 ```bash
 ngrok http 3000
 ```
+
+ ngrok config add-authtoken 38r0nqTazfg3iwkAeEB****
 
 成功启动后，你将看到类似输出：
 
