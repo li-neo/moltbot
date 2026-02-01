@@ -29,6 +29,7 @@ export function installProcessWarningFilter(): void {
   if (globalState[warningFilterKey]?.installed) return;
   globalState[warningFilterKey] = { installed: true };
 
+  process.removeAllListeners("warning");
   process.on("warning", (warning: Warning) => {
     if (shouldIgnoreWarning(warning)) return;
     process.stderr.write(`${warning.stack ?? warning.toString()}\n`);

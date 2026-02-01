@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import type { ClawdbotConfig, RuntimeEnv } from "clawdbot/plugin-sdk";
+import type { MoltbotConfig, RuntimeEnv } from "clawdbot/plugin-sdk";
 import { resolveLarkCredentials } from "./token.js";
 import type { LarkConfig } from "./types.js";
 import * as crypto from "crypto";
@@ -7,7 +7,7 @@ import { getLarkRuntime } from "./runtime.js";
 import { createLarkReplyDispatcher } from "./reply-dispatcher.js";
 
 export type MonitorLarkOpts = {
-  cfg: ClawdbotConfig;
+  cfg: MoltbotConfig;
   runtime?: RuntimeEnv;
   abortSignal?: AbortSignal;
 };
@@ -304,7 +304,7 @@ export async function monitorLarkProvider(opts: MonitorLarkOpts): Promise<Monito
 
               if (pairingCode) {
                 const dispatcher = createLarkReplyDispatcher({ cfg, channelId });
-                await dispatcher.dispatch({
+                await dispatcher.dispatcher.dispatch({
                   body: `To chat with this bot, please ask the owner to approve your pairing code: ${pairingCode}`,
                 });
               }
@@ -364,10 +364,10 @@ export async function monitorLarkProvider(opts: MonitorLarkOpts): Promise<Monito
             replyOptions,
           });
 
-          dispatchPromise.then((result) => {
+          dispatchPromise.then((result: unknown) => {
             log(`Lark dispatchReplyFromConfig completed successfully:`, result);
             markDispatchIdle();
-          }).catch((err) => {
+          }).catch((err: unknown) => {
             errorLog(`Lark dispatchReplyFromConfig failed:`, err);
             errorLog(`Error type: ${typeof err}, String: "${String(err)}"`);
             if (err instanceof Error) {

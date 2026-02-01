@@ -1,4 +1,4 @@
-import type { ChannelPlugin, ClawdbotConfig } from "clawdbot/plugin-sdk";
+import type { ChannelPlugin, MoltbotConfig } from "clawdbot/plugin-sdk";
 import { buildChannelConfigSchema, DEFAULT_ACCOUNT_ID, formatPairingApproveHint } from "clawdbot/plugin-sdk";
 import { LarkConfigSchema, type LarkConfig } from "./types.js";
 import { larkOutbound } from "./send.js";
@@ -23,7 +23,7 @@ const meta = {
   order: 70,
 } as const;
 
-function resolveLarkAccount(cfg: ClawdbotConfig, _accountId?: string): ResolvedLarkAccount {
+function resolveLarkAccount(cfg: MoltbotConfig, _accountId?: string): ResolvedLarkAccount {
   const larkCfg = cfg.channels?.lark as LarkConfig | undefined;
   return {
     accountId: DEFAULT_ACCOUNT_ID,
@@ -52,7 +52,7 @@ export const larkPlugin: ChannelPlugin<ResolvedLarkAccount> = {
 
   config: {
     listAccountIds: () => [DEFAULT_ACCOUNT_ID],
-    resolveAccount: (cfg) => resolveLarkAccount(cfg as ClawdbotConfig),
+    resolveAccount: (cfg) => resolveLarkAccount(cfg as MoltbotConfig),
     defaultAccountId: () => DEFAULT_ACCOUNT_ID,
     setAccountEnabled: ({ cfg, enabled }) => ({
       ...cfg,
@@ -65,7 +65,7 @@ export const larkPlugin: ChannelPlugin<ResolvedLarkAccount> = {
       },
     }),
     deleteAccount: ({ cfg }) => {
-      const next = { ...cfg } as ClawdbotConfig;
+      const next = { ...cfg } as MoltbotConfig;
       const nextChannels = { ...cfg.channels };
       delete nextChannels.lark;
       if (Object.keys(nextChannels).length > 0) {
@@ -75,19 +75,19 @@ export const larkPlugin: ChannelPlugin<ResolvedLarkAccount> = {
       }
       return next;
     },
-    isConfigured: (_account, cfg) => Boolean(resolveLarkCredentials((cfg as ClawdbotConfig).channels?.lark as LarkConfig)),
+    isConfigured: (_account, cfg) => Boolean(resolveLarkCredentials((cfg as MoltbotConfig).channels?.lark as LarkConfig)),
     describeAccount: (account) => ({
       accountId: account.accountId,
       enabled: account.enabled,
       configured: account.configured,
     }),
-    resolveAllowFrom: ({ cfg }) => ((cfg as ClawdbotConfig).channels?.lark as LarkConfig)?.allowFrom ?? [],
+    resolveAllowFrom: ({ cfg }) => ((cfg as MoltbotConfig).channels?.lark as LarkConfig)?.allowFrom ?? [],
     formatAllowFrom: ({ allowFrom }) => allowFrom.map((s) => normalizeAllowEntry(String(s))),
   },
 
   security: {
     resolveDmPolicy: ({ cfg, account }) => {
-      const larkCfg = (cfg as ClawdbotConfig).channels?.lark as LarkConfig | undefined;
+      const larkCfg = (cfg as MoltbotConfig).channels?.lark as LarkConfig | undefined;
       return {
         policy: larkCfg?.dmPolicy ?? "pairing",
         allowFrom: larkCfg?.allowFrom ?? [],
@@ -99,7 +99,7 @@ export const larkPlugin: ChannelPlugin<ResolvedLarkAccount> = {
     },
     collectWarnings: ({ cfg }) => {
       const warnings: string[] = [];
-      const larkCfg = (cfg as ClawdbotConfig).channels?.lark as LarkConfig | undefined;
+      const larkCfg = (cfg as MoltbotConfig).channels?.lark as LarkConfig | undefined;
       
       if (larkCfg?.dmPolicy === "open") {
         warnings.push(
@@ -122,7 +122,7 @@ export const larkPlugin: ChannelPlugin<ResolvedLarkAccount> = {
     idLabel: "larkUserId",
     normalizeAllowEntry,
     notifyApproval: async ({ cfg, id }) => {
-      const larkCfg = (cfg as ClawdbotConfig).channels?.lark as LarkConfig | undefined;
+      const larkCfg = (cfg as MoltbotConfig).channels?.lark as LarkConfig | undefined;
       const creds = resolveLarkCredentials(larkCfg);
       if (!creds) {
         throw new Error("Lark credentials not configured");
@@ -152,12 +152,12 @@ export const larkPlugin: ChannelPlugin<ResolvedLarkAccount> = {
 
   groups: {
     resolveRequireMention: ({ cfg, groupId }) => {
-      const larkCfg = (cfg as ClawdbotConfig).channels?.lark as LarkConfig | undefined;
+      const larkCfg = (cfg as MoltbotConfig).channels?.lark as LarkConfig | undefined;
       const groupConfig = larkCfg?.groups?.[groupId] ?? larkCfg?.groups?.["*"];
       return groupConfig?.requireMention ?? true;
     },
     resolveToolPolicy: ({ cfg, groupId }) => {
-      const larkCfg = (cfg as ClawdbotConfig).channels?.lark as LarkConfig | undefined;
+      const larkCfg = (cfg as MoltbotConfig).channels?.lark as LarkConfig | undefined;
       const groupConfig = larkCfg?.groups?.[groupId] ?? larkCfg?.groups?.["*"];
       return groupConfig?.toolPolicy ?? "full";
     },
@@ -237,7 +237,7 @@ export const larkPlugin: ChannelPlugin<ResolvedLarkAccount> = {
   gateway: {
     startAccount: async (ctx) => {
       const { monitorLarkProvider } = await import("./monitor.js");
-      const larkCfg = (ctx.cfg as ClawdbotConfig).channels?.lark as LarkConfig | undefined;
+      const larkCfg = (ctx.cfg as MoltbotConfig).channels?.lark as LarkConfig | undefined;
       const port = larkCfg?.webhook?.port ?? 3000;
       
       ctx.setStatus({
@@ -249,22 +249,10 @@ export const larkPlugin: ChannelPlugin<ResolvedLarkAccount> = {
       ctx.log?.info(`[${ctx.accountId}] starting Lark provider (port ${port})`);
       
       return monitorLarkProvider({
-        cfg: ctx.cfg as ClawdbotConfig,
+        cfg: ctx.cfg as MoltbotConfig,
         runtime: ctx.runtime,
         abortSignal: ctx.abortSignal,
       });
-    },
-  },
-
-  onboarding: {
-    detectState: async (cfg) => {
-      const larkCfg = (cfg as ClawdbotConfig).channels?.lark as LarkConfig | undefined;
-      const creds = resolveLarkCredentials(larkCfg);
-      
-      if (creds) {
-        return { state: "configured", message: "Lark is configured" };
-      }
-      return { state: "unconfigured", message: "Set appId and appSecret in channels.lark" };
     },
   },
 };

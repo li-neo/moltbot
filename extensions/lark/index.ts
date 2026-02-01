@@ -1,4 +1,4 @@
-import type { ClawdbotPluginApi } from "clawdbot/plugin-sdk";
+import type { MoltbotPluginApi } from "clawdbot/plugin-sdk";
 import { emptyPluginConfigSchema } from "clawdbot/plugin-sdk";
 
 import { larkPlugin } from "./src/channel.js";
@@ -9,7 +9,7 @@ const plugin = {
   name: "Feishu / Lark",
   description: "Feishu / Lark channel plugin (Open Platform)",
   configSchema: emptyPluginConfigSchema(),
-  register(api: ClawdbotPluginApi) {
+  register(api: MoltbotPluginApi) {
     setLarkRuntime(api.runtime);
     api.registerChannel({ plugin: larkPlugin });
   },

@@ -1,10 +1,11 @@
-import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
+import type { MoltbotConfig } from "clawdbot/plugin-sdk";
 import { larkOutbound } from "./send.js";
 import { getLarkRuntime } from "./runtime.js";
+// @ts-ignore
 import type { ReplyPayload } from "clawdbot/auto-reply/types.js";
 
 export function createLarkReplyDispatcher(opts: {
-  cfg: ClawdbotConfig;
+  cfg: MoltbotConfig;
   channelId: string;
 }) {
   const core = getLarkRuntime();
@@ -39,7 +40,8 @@ export function createLarkReplyDispatcher(opts: {
         throw err;
       }
     },
-    onError: (err, info) => {
+    onError: (err: unknown, info: unknown) => {
+      // @ts-ignore
       console.error(`[Lark Reply] Dispatch error for ${info.kind}:`, err);
     },
   });

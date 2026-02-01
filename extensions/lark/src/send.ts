@@ -1,4 +1,4 @@
-import type { ChannelOutbound, ClawdbotConfig } from "clawdbot/plugin-sdk";
+import type { ChannelOutbound, MoltbotConfig } from "clawdbot/plugin-sdk";
 import { getTenantAccessToken, resolveLarkCredentials } from "./token.js";
 import type { LarkConfig } from "./types.js";
 
@@ -22,7 +22,7 @@ export const larkOutbound: ChannelOutbound = {
   sendText: async ({ cfg, to, text }) => {
     console.log(`[Lark Send] sendText called - to: ${to}, text length: ${text.length}`);
 
-    const larkCfg = (cfg as ClawdbotConfig).channels?.lark as LarkConfig | undefined;
+    const larkCfg = (cfg as MoltbotConfig).channels?.lark as LarkConfig | undefined;
     const creds = resolveLarkCredentials(larkCfg);
     if (!creds) {
       throw new Error("Lark credentials not configured (appId and appSecret required)");
